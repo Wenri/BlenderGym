@@ -21,12 +21,33 @@ from utils.code import get_code_as_string, edit_code
 from tasksolver.agent import Agent
 from tasksolver.event import *
 from tasksolver.common import ParsedAnswer, TaskSpec, Question 
-from tasksolver.exceptions import GPTOutputParseException, CodeExecutionException, ToolCallException
+from tasksolver.exceptions import GPTOutputParseException, CodeExecutionException, ToolCallException, GPTMaxTriesExceededException
 from tasksolver.utils import docs_for_GPT4
 from tasksolver.answer_types import YesNoWhy, PythonExecutableAnswer, LeftOrRight
 from tasksolver.answer_types import PythonExecutableDiffAnswer, StarredList
 from tasksolver.keychain import KeyChain
 from tqdm import tqdm
+
+
+def is_response_limit_error(exc):
+    if isinstance(exc, GPTMaxTriesExceededException):
+        return True
+
+    msg = str(exc).lower()
+    indicators = [
+        "fatal_llm_response_limit",
+        "rate limit",
+        "usage limit",
+        "quota",
+        "429",
+        "exceeded your current quota",
+        "credit balance",
+        "token limit",
+        "context length",
+        "too many tokens",
+        "no response",
+    ]
+    return any(indicator in msg for indicator in indicators)
 
 
 class GeneralAgent(Agent): 
@@ -152,13 +173,27 @@ Describe, in a bullet-point list (using * as the bullet points), the biggest vis
         done = False
         tries = 0 
         max_tries = 1
+        last_exception = None
+        last_failure_reason = None
 
         while not done and tries < max_tries: 
             logger.info(prepend_string + f"PLANNING ATTEMPT #{tries}")
-            list_of_diffs, _, _, _ = self.brainstorming_model.rough_guess(question)
+            try:
+                list_of_diffs, _, _, _ = self.brainstorming_model.rough_guess(question)
+            except Exception as e:
+                last_exception = e
+                last_failure_reason = f"brainstorming failed: {str(e)}"
+                tries += 1
+                logger.warning(prepend_string + f"Planning failed during brainstorming ({tries}): {str(e)}")
+                if is_response_limit_error(e):
+                    raise GPTMaxTriesExceededException(
+                        f"PLANNING FAILED due to response limit during brainstorming: {str(e)}"
+                    ) from e
+                continue
             tries += 1
             if len(list_of_diffs.list_items) == 0:
                 logger.warning(prepend_string + f"No change suggested: retrying ({tries})...")
+                last_failure_reason = "brainstorming returned no change suggestions"
                 continue # reform plan.
             
             diffs = list_of_diffs.list_items
@@ -205,12 +240,27 @@ NOTE THAT DO NOT COPY-PASTE THE WHOLE ORIGINAL CODE, WHICH IS TOO LONG. JUST IND
                 while not delta_done and delta_tries < delta_max_tries:
                     try:
                         diff, _, _, _ = self.code_delta_model.rough_guess(delta_question)
-                        tries += 1
+                        delta_tries += 1
                         delta_done = True
                     except GPTOutputParseException as e:
                         # logger.warning(prepend_string + f"Parsing of code delta for goal {goal} failed: {str(e)}")
+                        delta_tries += 1
+                        last_exception = e
+                        last_failure_reason = f"delta extraction parse failed for goal {goal}: {str(e)}"
                         logger.warning(prepend_string + f"retrying delta extraction ({delta_tries})...")
+                    except Exception as e:
+                        delta_tries += 1
+                        last_exception = e
+                        last_failure_reason = f"delta extraction failed for goal {goal}: {str(e)}"
+                        if is_response_limit_error(e):
+                            raise GPTMaxTriesExceededException(
+                                f"PLANNING FAILED due to response limit during delta extraction: {str(e)}"
+                            ) from e
+                        logger.warning(prepend_string + f"delta extraction failed ({delta_tries}): {str(e)}")
+                        break
 
+                if not delta_done:
+                    continue
             
                 # try to find the code snippet, if it isn't there, something is likely wrong with the plan.
                 try:
@@ -218,6 +268,8 @@ NOTE THAT DO NOT COPY-PASTE THE WHOLE ORIGINAL CODE, WHICH IS TOO LONG. JUST IND
                     diffs_to_implement.append(diff)
                 except ToolCallException as e:
                     # logger.warning(prepend_string + f"Code diff before...\n{diff.code_from}\n...not found in original code!") 
+                    last_exception = e
+                    last_failure_reason = f"planned diff could not be applied for goal {goal}: {str(e)}"
                     logger.warning(prepend_string + f"Code diff before not found in original code!") 
 
                     # logger.warning(f"REPLANNING. Execution of goal {goal} led to the following error: {str(e)}")
@@ -229,8 +281,16 @@ NOTE THAT DO NOT COPY-PASTE THE WHOLE ORIGINAL CODE, WHICH IS TOO LONG. JUST IND
                 continue # replanning
             done = True # no need to plan again.
 
-            
-        assert done, "PLANNING FAILED!" 
+        if not done:
+            if last_exception is not None and is_response_limit_error(last_exception):
+                raise GPTMaxTriesExceededException(
+                    f"PLANNING FAILED due to response limit: {str(last_exception)}"
+                ) from last_exception
+
+            failure_message = "PLANNING FAILED!"
+            if last_failure_reason:
+                failure_message += f" Last failure: {last_failure_reason}"
+            raise RuntimeError(failure_message) from last_exception
 
         edit_stages = []
         edited_code = code2llm
