@@ -1,4 +1,3 @@
-
 import sys
 import os
 import subprocess
@@ -31,7 +30,7 @@ from tqdm import tqdm
 
 
 class GeneralAgent(Agent): 
-    """
+    """q
     Agent that answers questions in a certain format.
     """
     def __init__(self, api_key:str, task:TaskSpec,
@@ -54,6 +53,7 @@ class GeneralAgent(Agent):
         script_id = str(ObjectId())
         code_path = str(script_save / (f"{iteration}_" + script_id + ".py"))
         render_path = str(render_save / (f"{iteration}_" + script_id + ".png"))
+
 
         with open(code_path, "w")  as f:
             f.write(p_ans.code)
@@ -213,7 +213,7 @@ NOTE THAT DO NOT COPY-PASTE THE WHOLE ORIGINAL CODE, WHICH IS TOO LONG. JUST IND
 
             
                 # try to find the code snippet, if it isn't there, something is likely wrong with the plan.
-                try: 
+                try:
                     edit_code(code2llm, diff.code_from, diff.code_to)
                     diffs_to_implement.append(diff)
                 except ToolCallException as e:
@@ -273,4 +273,3 @@ NOTE THAT DO NOT COPY-PASTE THE WHOLE ORIGINAL CODE, WHICH IS TOO LONG. JUST IND
     def followup_func(agent):
         feedback_question = None
         return feedback_question
-
