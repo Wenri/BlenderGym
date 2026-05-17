@@ -160,6 +160,7 @@ def should_stop_on_error(exc):
     msg = str(exc).lower()
     indicators = [
         "fatal_llm_response_limit",
+        "model limit",
         "rate limit",
         "usage limit",
         "quota",
@@ -170,6 +171,8 @@ def should_stop_on_error(exc):
         "context length",
         "too many tokens",
         "no response",
+        "claude code cli call failed",
+        "claude auth status --text",
     ]
     return any(indicator in msg for indicator in indicators)
 

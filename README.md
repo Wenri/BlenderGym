@@ -124,13 +124,36 @@ The script writes a reconstructed `intermediate_metadata_oneshot_*.json` and, if
 This section introduces how to evaluate the output from your VLM after generating the output edits.
 ```
 python evaluation.py --inference_metadata_saved_path [path_to_the_json_metadata] 
+
+# Example with Chamfer settings exposed:
+# python evaluation.py \
+#   --inference_metadata_saved_path info_saved/intermediate_metadata_oneshot_xxx.json \
+#   --chamfer_num_points 4096 \
+#   --chamfer_chunk_size 512
 ```
 where
 * `--inference_metadata_saved_path`: path to the inference metadata(paths of proposal edit scripts, winner information, etc.) By default, it's a json file under `infosaved/`.
+* `--chamfer_num_points`: number of surface points sampled from each exported scene mesh when computing Chamfer Distance. Default: `4096`.
+* `--chamfer_chunk_size`: chunk size used for pairwise nearest-neighbor distance computation during Chamfer evaluation. Default: `512`.
 
-More details about the arguments can be found in `evaluation.py`. 
+The evaluation script always computes the image-based metrics already used in BlenderGym:
+* `n_clip`
+* `pl` (photometric loss)
+
+It now also computes Chamfer Distance for the 3D-sensitive tasks:
+* `geometry`
+* `blendshape`
+* `placement`
+
+For those tasks, the evaluator executes each proposal script in Blender, exports the resulting scene geometry, samples points from the mesh surface, and reports Chamfer scores in addition to the render-based metrics.
+
+More details about the arguments can be found in `evaluation.py`.
 
 You can check `eval_renders/overall_scores.json` for the evaluation scores. Evaluation renders should be saved under `eval_renders/`.
+
+When Chamfer is available for a task, the output JSONs include:
+* `best_chamfer`: best Chamfer score among executable proposals for that instance/task
+* `selected_chamfer`: Chamfer score of the verifier-selected proposal, when selection is available
 
 # Utilities
 
@@ -216,7 +239,6 @@ If you find our work useful, please cite the Bibtex below:
       url={https://arxiv.org/abs/2504.01786}, 
 }
 ```
-
 
 
 

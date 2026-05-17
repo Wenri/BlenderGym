@@ -1,0 +1,43 @@
+{
+  "source": {
+    "paper": "BlenderGym: Benchmarking Foundational Model Systems for Graphics Editing (CVPR 2025)",
+    "paper_note": "Section 3.1 states 245 scenes across five tasks: procedural geometry, lighting, procedural material, blend shape, and object placement with (50/40/40/75/40) instances respectively.",
+    "repo_note": "These counts match the initial task_instance_count_dict in inference.py at commit f106e65."
+  },
+  "paper_split": {
+    "geometry": {
+      "count": 50,
+      "instances": "geometry1-geometry50"
+    },
+    "lighting": {
+      "count": 40,
+      "instances": "lighting1-lighting40"
+    },
+    "material": {
+      "count": 40,
+      "instances": "material1-material40"
+    },
+    "blendshape": {
+      "count": 75,
+      "instances": "blendshape1-blendshape75"
+    },
+    "placement": {
+      "count": 40,
+      "instances": "placement1-placement40"
+    }
+  },
+  "current_repo_counts": {
+    "geometry": 55,
+    "lighting": 45,
+    "material": 45,
+    "blendshape": 85,
+    "placement": 50
+  },
+  "extra_instances_not_in_paper_split": {
+    "geometry": "geometry51-geometry55",
+    "lighting": "lighting41-lighting45",
+    "material": "material41-material45",
+    "blendshape": "blendshape76-blendshape85",
+    "placement": "placement41-placement50"
+  }
+}
