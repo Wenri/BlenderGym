@@ -1,7 +1,7 @@
 [project]
-name = "reinforcement_llm_2D"
+name = "blendergym"
 version = "0.1.0"
-description = "RL framework for training vision transformers on keypoint correspondence matching"
+description = "Benchmark and harness for VLM systems on Blender 3D scene-editing tasks (geometry, material, blendshape, placement, lighting)."
 readme = "README.md"
 requires-python = ">=3.13"
 dependencies = []
@@ -12,12 +12,8 @@ build-backend = "setuptools.build_meta"
 
 [tool.setuptools.packages.find]
 include = [
-    "reinforcement_llm_2D",
-    "reward_function",
-    "image_classification",
-    "keypoint_matching_3D",
-    "geo_aware",
-    "geo_aware.*",
+    "system",
+    "system.*",
 ]
 
 # ── Pixi workspace ──────────────────────────────────────────────────
@@ -28,7 +24,7 @@ platforms = ["linux-64"]
 preview = ["pixi-build"]
 
 [tool.pixi.package]
-name = "reinforcement_llm_2D"
+name = "blendergym"
 version = "0.1.0"
 
 [tool.pixi.package.build]
@@ -41,7 +37,7 @@ setuptools = ">=78.1"
 [tool.pixi.dependencies]
 python = "3.13.*"
 pip = "*"
-reinforcement_llm_2D = { path = "." }
+blendergym = { path = "." }
 
 # Core scientific computing
 numpy = ">=2,<3"
@@ -246,16 +242,7 @@ RANLIB = "$CONDA_PREFIX/bin/x86_64-conda-linux-gnu-ranlib"
 STRIP = "$CONDA_PREFIX/bin/x86_64-conda-linux-gnu-strip"
 
 [tool.pixi.tasks]
-train = { cmd = "python scripts/train_dino.py" }
-visualize = { cmd = "python scripts/visualize_results.py --baseline" }
-train-visual = { cmd = "python scripts/train_visual_encoder.py" }
-typecheck = "pyright reinforcement_llm_2D/ reward_function/ image_classification/ keypoint_matching_3D/ geo_aware/ scripts/ tests/"
-test = "pytest tests/ -v"
-# geo_aware tasks
-pck-train = { cmd = "python scripts/pck_main.py" }
-pck-eval = { cmd = "python scripts/pck_main.py --DO_EVAL --ADAPTER_NET DUMMY --NOT_WANDB" }
-pck-shapes = { cmd = "python scripts/pck_train_shapes.py" }
-preprocess-features = { cmd = "python -m geo_aware.preprocess_map" }
+typecheck = "pyright system/ TaskSolver/ *.py"
 
 # ── vLLM feature (adds vllm serving on top of shared torch 2.10 stack) ──
 
