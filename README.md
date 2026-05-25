@@ -1,47 +1,36 @@
-# BlenderGym Benchmark [CVPR 2025 Highlight] 
+# VLM-System Benchmarking on Blender Editing
 
+A harness for running and scoring VLM "systems" (single model, or generator + verifier) on Blender scene-editing tasks. Each instance asks the VLM to edit a starter `bpy` script so the rendered scene matches a goal scene; the harness then renders proposals and scores them with image and (for 3D-sensitive tasks) geometry metrics.
 
-[**🌐 Homepage**](https://blendergym.github.io/) | [**📖 arXiv**](https://arxiv.org/abs/2504.01786) | [**🏆 Leaderboard**](https://blendergym.github.io/#leaderboard) | [**🤗 Hugging Face**](https://huggingface.co/datasets/richard-guyunqi/BG_bench_data) 
+> **🚧 Ongoing project.** This repository is under active development. APIs, CLI flags, output layouts, and instance counts may change between commits. Recent additions include crash-resume and retry flows (`inference_retry.py`, `inference_oneshot_retry.py`), one-shot inference without a verifier (`inference_oneshot.py`), metadata reconstruction (`reconstruct_metadata.py`), Chamfer Distance for 3D-sensitive tasks in `evaluation.py`, and Claude Code CLI model adapters. Pin a commit if you need reproducibility, and file issues for anything that breaks.
 
-This repo contains the evaluation code for the paper "[BlenderGym: Benchmarking Foundational Model Systems for 3D Graphics](https://arxiv.org/abs/2504.01786)".
-
-## 🔔News
-1. 2025-4-11: We release BlenderGym, the first VLM System benchmark on 3D graphics editing!
-2. 2025-4-4: BlenderGym is accepted for **Highlight** at **CVPR 2025** (top 387 over 13,008 valid submissions)!
-3. 2025-4-2: Our paper is now accessible at [https://arxiv.org/abs/2504.01786](https://arxiv.org/abs/2504.01786)! 
-4. 2025-2-26: BlenderGym is accepted to **CVPR 2025**!
-
-# BlenderGym Usage
-1. Jump to [**Installation**](#installation) to setup the Conda environment and download benchmark data.
-2. After installation, jump to [**VLM Evaluation**](#vlm-evaluation) right away to benchmark your VLM!
+# Usage
+1. Jump to [**Installation**](#installation) to set up the Conda environment and download benchmark data.
+2. After installation, jump to [**VLM Evaluation**](#vlm-evaluation) to start benchmarking your VLM.
 
 # Installation
 ```
-# Clone BlenderGym
-git clone https://github.com/richard-guyunqi/BlenderGym-Open.git
-cd BlenderGym-Open
-
-# Creates conda environment for BlenderGym
+# Create conda environment
 conda create -n blendergym python=3.10
 conda activate blendergym
 
-# Install environment and download benchmark data
+# Install dependencies and download benchmark data
 bash starter_setup.sh
 ```
 
 # VLM Evaluation
 ## VLM Setup
-This section sets your VLM up for inference on BlenderGym.
+This section sets your VLM up for inference.
 
-We provide a list of BlenderGym-suppoted models in [Supported Models](#supported-models). To run the open-source ones among them, jump directly to [**Inference on BlenderGym**](#inference-on-blendergym). To run the API-required ones among them, jump to [API Key Plug-in](#api-key-plug-in) to enter your API first.
+We provide a list of supported models in [Supported Models](#supported-models). To run the open-source ones, jump directly to [**Inference**](#inference-on-blendergym). For API-required models, jump to [API Key Plug-in](#api-key-plug-in) to enter your API first.
 
 If the VLM you want to test is not supported, jump to [Custom VLM Plug-in](#custom-vlm-plug-in).
 
 ## [Optional] Test your VLM setup
 To sanity-check your API / local implementation, you can optionally jump to [Testing VLM Setup](#testing-vlm-setup) for some simple tests.
 
-## Inference on BlenderGym
-This section introduces how to run your VLM on BlenderGym data to generate output edits.
+## Inference
+This section introduces how to run your VLM on the benchmark data to generate output edits.
 ```
 python inference.py --task placement --generator_type [model_id] --verifier_type [model_id]
 
@@ -136,7 +125,7 @@ where
 * `--chamfer_num_points`: number of surface points sampled from each exported scene mesh when computing Chamfer Distance. Default: `4096`.
 * `--chamfer_chunk_size`: chunk size used for pairwise nearest-neighbor distance computation during Chamfer evaluation. Default: `512`.
 
-The evaluation script always computes the image-based metrics already used in BlenderGym:
+The evaluation script always computes the image-based metrics:
 * `n_clip`
 * `pl` (photometric loss)
 
@@ -158,14 +147,14 @@ When Chamfer is available for a task, the output JSONs include:
 # Utilities
 
 ## Testing VLM setup
-This section provides unit tests for your VLM setup. We recommend you test your API plug-in or custom VLM plug-in. It starts by testing text-only or vision-language input for your VLM, and then test your VLM on a single instance of BlenderGym.
+This section provides unit tests for your VLM setup. We recommend you test your API plug-in or custom VLM plug-in. It starts by testing text-only or vision-language input for your VLM, and then test your VLM on a single task instance.
 
 1. We recommend start testing a single query for your VLM pipeline. To do that, we offer two test scripts saved under `Tasksolver/test_scripts/`: `text_only.py` and `vlm.py`. With them, you can test text-only input and vision-language input for your VLM, respectively. Follow the todos in them to set up the tests.
 ```
 python Tasksolver/test_scripts/text_only.py     # Test on language-only inputs
 python Tasksolver/test_scripts/vision_language.py       # Test on vision-language inputs
 ```
-2. After testing a single query of your VLM, you can try to run your VLM on one instance of BlenderGym by 
+2. After testing a single query of your VLM, you can run your VLM on one task instance by
 ```
 cd system
 python vlm_single_edit.py --model_id [your_model_id]
@@ -178,7 +167,7 @@ python inference_oneshot.py --task test --generator_type [your_model_id]
 ```
 This will save outputs under `system/outputs/` with a `d1_b1` suffix and will not call a verifier model.
 
-After you are done with testing the VLM setup, you may jump direclty into to [Inference on BlenderGym](#inference-on-blendergym).
+After you are done with testing the VLM setup, you may jump directly to [Inference](#inference).
 
 
 ##  API Key Plug-in
@@ -225,23 +214,5 @@ After you are done with the two steps above, you may jump back to [VLM Setup](#v
 | Qwen2-VL(7B AWQ) | qwen |
 | QwenLlama  | qwenllama |
 | Llama 3.1(8B) | llama |
-
-# Citation
-If you find our work useful, please cite the Bibtex below:
-```
-@misc{gu2025blendergymbenchmarkingfoundationalmodel,
-      title={BlenderGym: Benchmarking Foundational Model Systems for Graphics Editing}, 
-      author={Yunqi Gu and Ian Huang and Jihyeon Je and Guandao Yang and Leonidas Guibas},
-      year={2025},
-      eprint={2504.01786},
-      archivePrefix={arXiv},
-      primaryClass={cs.GR},
-      url={https://arxiv.org/abs/2504.01786}, 
-}
-```
-
-
-
-
 
 
