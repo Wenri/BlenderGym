@@ -255,6 +255,8 @@ NCCL_NET = "Socket"
 VLLM_API_KEY = "<REDACTED>"
 
 [tool.pixi.feature.vllm.tasks]
+# Qwen3.6-27B dense — FP8, 2×L40S (GPU8+9, PIX link, NUMA 5)
+serve-qwen36-27b = { cmd = "vllm serve Qwen/Qwen3.6-27B-FP8 --tensor-parallel-size 2 --max-model-len 262144 --host 0.0.0.0 --port 8000 --reasoning-parser qwen3 --api-key $VLLM_API_KEY", env = { CUDA_VISIBLE_DEVICES = "8,9" } }
 # Qwen3.5 397B MoE (17B active) — GPTQ-Int4, 4×H100, 262K context
 serve-qwen35 = "vllm serve Qwen/Qwen3.5-397B-A17B-GPTQ-Int4 --tensor-parallel-size 4 --enable-expert-parallel --max-model-len 262144 --host 0.0.0.0 --port 8000 --reasoning-parser qwen3 --api-key $VLLM_API_KEY"
 # Qwen3-VL 235B MoE (22B active) — FP8, 4×H100
