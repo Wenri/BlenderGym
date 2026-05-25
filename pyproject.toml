@@ -252,8 +252,11 @@ vllm = { git = "https://github.com/Wenri/vllm.git", branch = "cu130-torch2.10" }
 [tool.pixi.feature.vllm.activation.env]
 # NCCL net plugin segfaults with pip-installed NCCL; force socket transport
 NCCL_NET = "Socket"
+VLLM_API_KEY = "<REDACTED>"
 
 [tool.pixi.feature.vllm.tasks]
+# Qwen3.5 397B MoE (17B active) — GPTQ-Int4, 4×H100, 262K context
+serve-qwen35 = "vllm serve Qwen/Qwen3.5-397B-A17B-GPTQ-Int4 --tensor-parallel-size 4 --enable-expert-parallel --max-model-len 262144 --host 0.0.0.0 --port 8000 --reasoning-parser qwen3 --api-key $VLLM_API_KEY"
 # Qwen3-VL 235B MoE (22B active) — FP8, 4×H100
 serve-qwen3 = "vllm serve Qwen/Qwen3-VL-235B-A22B-Thinking-FP8 --tensor-parallel-size 4 --enable-expert-parallel --max-model-len 4096 --port 8000"
 # GLM-4.6V 106B MoE — BF16, 4×H100
